@@ -53,14 +53,14 @@ exports.createReservation = async (req, res) => {
         }
 
         // Message de confirmation au client
-        const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+        const confirmationLink = `https://lonicera.ca/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
 
         const messageFR = `Bonjour ${fullName}, votre réservation chez Chèvrefeuille Lonicera pour ${guests} personne(s) le ${date} à ${time} a bien été confirmée. Si vous souhaitez l'annuler, cliquez ici : ${confirmationLink}`;
         const messageEN = `Hello ${fullName}, your reservation at Chèvrefeuille Lonicera for ${guests} guest(s) on ${date} at ${time} has been confirmed. If you wish to cancel it, click here: ${confirmationLink}`;
         const confirmationMessage = preferredLanguage === 'fr' ? messageFR : messageEN;
 
         if (contactMethod === 'email' || contactMethod === 'both') {
-            const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+            const confirmationLink = `https://lonicera.ca/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
 
             const confirmationEmail = new SibApiV3Sdk.SendSmtpEmail();
             confirmationEmail.sender = {
@@ -148,7 +148,7 @@ exports.getByDateRange = async (req, res) => {
 
 exports.getReservationsByDate = async (req, res) => {
     
-    const MAX_CAPACITY = 20;
+    const MAX_CAPACITY = 23;
     const DURATION_IN_SLOTS = 3; // 1h30 = 3 créneaux de 30 min
     try {
         const { date } = req.params;
@@ -247,7 +247,7 @@ exports.confirmReservation = async (req, res) => {
         apiKey.apiKey = process.env.BREVO_API_KEY;
 
         // Construction du lien de confirmation
-        const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+        const confirmationLink = `https://lonicera.ca/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
 
         const messages = {
             fr: {
