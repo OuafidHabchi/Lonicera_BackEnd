@@ -148,7 +148,7 @@ exports.getByDateRange = async (req, res) => {
 
 exports.getReservationsByDate = async (req, res) => {
     
-    const MAX_CAPACITY = 23;
+    const MAX_CAPACITY = 20;
     const DURATION_IN_SLOTS = 3; // 1h30 = 3 créneaux de 30 min
     try {
         const { date } = req.params;
