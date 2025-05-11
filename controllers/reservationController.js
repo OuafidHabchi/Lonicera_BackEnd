@@ -53,14 +53,14 @@ exports.createReservation = async (req, res) => {
         }
 
         // Message de confirmation au client
-        const confirmationLink = `https://lonicera.ca/CancelReservation}`;
+        const confirmationLink = `lonicera.ca/CancelReservation`;
 
         const messageFR = `Bonjour ${fullName}, votre réservation chez Chèvrefeuille Lonicera pour ${guests} personne(s) le ${date} à ${time} a bien été confirmée. Si vous souhaitez l'annuler, cliquez ici : ${confirmationLink}`;
         const messageEN = `Hello ${fullName}, your reservation at Chèvrefeuille Lonicera for ${guests} guest(s) on ${date} at ${time} has been confirmed. If you wish to cancel it, click here: ${confirmationLink}`;
         const confirmationMessage = preferredLanguage === 'fr' ? messageFR : messageEN;
 
         if (contactMethod === 'email' || contactMethod === 'both') {
-            const confirmationLink = `https://lonicera.ca/CancelReservation}`;
+            const confirmationLink = `lonicera.ca/CancelReservation`;
 
             const confirmationEmail = new SibApiV3Sdk.SendSmtpEmail();
             confirmationEmail.sender = {
