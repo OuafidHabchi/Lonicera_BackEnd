@@ -14,8 +14,7 @@ exports.getAllEmployees = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("email :"+email)
-    console.log("password :"+password)
+
     
     // Vérifier si l'employé existe
     const employee = await Employee.findOne({ email });
@@ -53,16 +52,19 @@ exports.createEmployee = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-    // Vérifie si l'utilisateur existe déjà
-    const existingEmployee = await Employee.findOne({ email });
+    // Convertir l'email en minuscules
+    const emailLowerCase = email.toLowerCase();
+
+    // Vérifie si l'utilisateur existe déjà avec l'email en minuscules
+    const existingEmployee = await Employee.findOne({ email: emailLowerCase });
     if (existingEmployee) {
       return res.status(400).json({ success: false, message: 'Email déjà utilisé.' });
     }
 
-    // Création de l'utilisateur
+    // Création de l'utilisateur avec l'email en minuscules
     const newEmployee = new Employee({
       name,
-      email,
+      email: emailLowerCase,  // Assurez-vous d'utiliser l'email en minuscules ici aussi
       password,
       role
     });
@@ -75,6 +77,7 @@ exports.createEmployee = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Erreur serveur.' });
   }
 };
+
 
 
 exports.deleteEmployeeById = async (req, res) => {
@@ -99,9 +102,12 @@ exports.updateEmployeeById = async (req, res) => {
     const { id } = req.params;
     const { name, email, password, role } = req.body;
 
+    // Convertir l'email en minuscules
+    const emailLowerCase = email.toLowerCase();
+
     const updatedEmployee = await Employee.findByIdAndUpdate(
       id,
-      { name, email, password, role },
+      { name, email: emailLowerCase, password, role }, // Utiliser l'email en minuscules ici
       { new: true }
     );
 
