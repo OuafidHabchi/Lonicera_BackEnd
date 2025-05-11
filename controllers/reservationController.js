@@ -53,14 +53,14 @@ exports.createReservation = async (req, res) => {
         }
 
         // Message de confirmation au client
-        const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+        const confirmationLink = `https://lonicera.ca/CancelReservation}`;
 
         const messageFR = `Bonjour ${fullName}, votre réservation chez Chèvrefeuille Lonicera pour ${guests} personne(s) le ${date} à ${time} a bien été confirmée. Si vous souhaitez l'annuler, cliquez ici : ${confirmationLink}`;
         const messageEN = `Hello ${fullName}, your reservation at Chèvrefeuille Lonicera for ${guests} guest(s) on ${date} at ${time} has been confirmed. If you wish to cancel it, click here: ${confirmationLink}`;
         const confirmationMessage = preferredLanguage === 'fr' ? messageFR : messageEN;
 
         if (contactMethod === 'email' || contactMethod === 'both') {
-            const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+            const confirmationLink = `https://lonicera.ca/CancelReservation}`;
 
             const confirmationEmail = new SibApiV3Sdk.SendSmtpEmail();
             confirmationEmail.sender = {
@@ -247,7 +247,7 @@ exports.confirmReservation = async (req, res) => {
         apiKey.apiKey = process.env.BREVO_API_KEY;
 
         // Construction du lien de confirmation
-        const confirmationLink = `http://192.168.12.8:5173/ReservationConfirmation/${encodeURIComponent(reservation._id.toString())}/${encodeURIComponent(reservation.confirmationToken)}`;
+        const confirmationLink = `https://lonicera.ca/CancelReservation`;
 
         const messages = {
             fr: {
@@ -554,67 +554,92 @@ exports.refuseReservation = async (req, res) => {
     }
 };
 
+// Trouver les réservations par email et date
+exports.findReservations = async (req, res) => {
+  try {
+    const { email, date } = req.query;
 
-
-exports.getReservationByToken = async (req, res) => {
-    const { id, token } = req.params;
-
-    try {
-        const reservation = await Reservation.findById(id);
-
-        if (!reservation) {
-            return res.status(404).json({ message: 'Réservation introuvable' });
-        }
-
-        // Vérification du token
-        if (reservation.confirmationToken !== token) {
-            return res.status(401).json({ message: 'Token invalide' });
-        }
-
-        // Création de la réponse de base
-        const response = {
-            fullName: reservation.fullName,
-            email: reservation.email,
-            phone: reservation.phone,
-            date: reservation.date,
-            time: reservation.time,
-            guests: reservation.guests
-        };
-
-        // Ajouter ClientConfirmation si elle existe
-        if (reservation.ClientConfirmation === true || reservation.ClientConfirmation === false) {
-            response.ClientConfirmation = reservation.ClientConfirmation;
-        }
-
-        // Renvoi de la réponse
-        res.json(response);
-    } catch (err) {
-        res.status(500).json({ message: 'Erreur serveur', error: err });
+    // Validation basique
+    if (!email || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email et date sont requis.'
+      });
     }
+
+    const reservations = await Reservation.find({
+      email: email,
+      date: date,
+      Confirmation: { $ne: false }
+    }).select('-confirmationToken -Seen -__v');
+
+    if (!Array.isArray(reservations) || reservations.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: reservations
+    });
+  } catch (error) {
+    console.error('Erreur lors de la recherche des réservations :', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la recherche des réservations.'
+    });
+  }
 };
 
 
-exports.respondToReservation = async (req, res) => {
-    const { reservationId, token, action } = req.body;
+// Annuler une réservation
+exports.cancelReservation = async (req, res) => {
+  try {
+    const { reservationId, phone } = req.body;
 
-    try {
-        const reservation = await Reservation.findById(reservationId);
-
-        if (!reservation) {
-            return res.status(404).json({ message: 'Réservation introuvable' });
-        }
-
-        // Vérification du token
-        if (reservation.confirmationToken !== token) {
-            return res.status(401).json({ message: 'Token invalide' });
-        }
-
-        // Mise à jour de l'attribut ClientConfirmation en fonction de l'action
-        reservation.ClientConfirmation = action === 'confirm'; // Si l'action est 'confirm', mettre à jour en true, sinon en false
-        await reservation.save();
-
-        res.json({ message: `Réservation ${action === 'confirm' ? 'confirmée' : 'refusée'}.` });
-    } catch (err) {
-        res.status(500).json({ message: 'Erreur serveur', error: err });
+    if (!reservationId || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'L\'ID de la réservation et le numéro de téléphone sont requis.'
+      });
     }
+
+    const reservation = await Reservation.findById(reservationId);
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Réservation non trouvée.'
+      });
+    }
+
+    if (reservation.phone !== phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Numéro de téléphone incorrect. Veuillez utiliser le numéro associé à cette réservation.'
+      });
+    }
+
+    reservation.ClientConfirmation = false;
+    reservation.ConfirmationDate = new Date().toISOString();
+    await reservation.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Réservation annulée avec succès.',
+      data: {
+        id: reservation._id,
+        date: reservation.date,
+        time: reservation.time
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'annulation de la réservation :', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de l\'annulation de la réservation.'
+    });
+  }
 };

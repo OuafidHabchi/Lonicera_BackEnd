@@ -35,11 +35,6 @@ app.use('/api/plats', platRoutes);
 app.use('/api/ventes', venteRoutes);
 app.use('/api/factures', factureRoutes);
 
-
-
-
-
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

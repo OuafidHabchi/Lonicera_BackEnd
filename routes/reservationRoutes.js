@@ -8,13 +8,11 @@ router.patch('/mark-seen', reservationController.markAsSeen);
 
 router.patch('/confirm', reservationController.confirmReservation);
 router.patch('/refuse', reservationController.refuseReservation);
-router.get('/:id/:token', reservationController.getReservationByToken);
-// Route pour répondre à la réservation (confirmer ou refuser)
-router.post('/respond', reservationController.respondToReservation);
 router.get('/resver/date/:date',reservationController.getReservationsByDate);
-
 router.get('/reservations', reservationController.getByDateRange);
-
+// Routes pour l'annulation des réservations
+router.get('/find', reservationController.findReservations);
+router.post('/cancel',reservationController.cancelReservation);
 
 
 
