@@ -147,67 +147,97 @@ exports.getByDateRange = async (req, res) => {
 
 
 exports.getReservationsByDate = async (req, res) => {
-    
-    const MAX_CAPACITY = 18;
-    const DURATION_IN_SLOTS = 3; // 1h30 = 3 créneaux de 30 min
-    try {
-        const { date } = req.params;
-    
+  const MAX_CAPACITY = 22;
+  const DURATION_IN_SLOTS_30MIN = 3; // 1h30 = 3 créneaux de 30 min (sam/Dim/Lun inchangé)
 
-        if (!date) {
-            return res.status(400).json({ error: "La date est requise dans les paramètres." });
-        }
-
-        // Générer les créneaux horaires entre 10:00 et 15:00 toutes les 30 minutes
-        const generateTimeSlots = () => {
-            const start = moment("10:00", "HH:mm");
-            const end = moment("15:00", "HH:mm");
-            const slots = [];
-
-            while (start <= end) {
-                slots.push(start.format("HH:mm"));
-                start.add(30, "minutes");
-            }
-
-            return slots;
-        };
-
-        const timeSlots = generateTimeSlots();
-        const occupancy = {};
-
-        // Initialiser chaque créneau avec 0
-        timeSlots.forEach((slot) => {
-            occupancy[slot] = 0;
-        });
-
-        // Récupérer les réservations de la date
-        const reservations = await Reservation.find({ date });
-
-        // Pour chaque réservation, ajouter le nombre de personnes sur les 3 créneaux (1h30)
-        reservations.forEach((res) => {
-            const startTime = moment(res.time, "HH:mm");
-
-            for (let i = 0; i < DURATION_IN_SLOTS; i++) {
-                const slot = startTime.clone().add(i * 30, "minutes").format("HH:mm");
-
-                if (occupancy.hasOwnProperty(slot)) {
-                    occupancy[slot] += res.guests;
-                }
-            }
-        });
-
-        // Créer la réponse avec les places disponibles
-        const availability = timeSlots.map((slot) => ({
-            time: slot,
-            availableSeats: Math.max(0, MAX_CAPACITY - occupancy[slot])
-        }));
-
-        res.status(200).json(availability);
-
-    } catch (error) {
-        console.error("❌ Erreur lors de la récupération des disponibilités :", error);
-        res.status(500).json({ error: error.message });
+  try {
+    const { date } = req.params;
+    if (!date) {
+      return res.status(400).json({ error: "La date est requise dans les paramètres." });
     }
+
+    // Détecter si la date est un vendredi (0=dimanche, 5=vendredi)
+    const dayOfWeek = moment(date, "YYYY-MM-DD", true).day();
+    const isFriday = dayOfWeek === 5;
+
+    // Génération des créneaux selon le jour
+    const generateTimeSlots = () => {
+      const slots = [];
+
+      if (isFriday) {
+        // Vendredi : 17:00 → 21:00, pas = 60 min, créneaux par heure
+        const start = moment("17:00", "HH:mm");
+        const end = moment("21:00", "HH:mm");
+        const stepMinutes = 60;
+
+        const cursor = start.clone();
+        while (cursor <= end) {
+          slots.push(cursor.format("HH:mm"));
+          cursor.add(stepMinutes, "minutes");
+        }
+      } else {
+        // Autres jours : 10:00 → 15:00, pas = 30 min (inchangé)
+        const start = moment("10:00", "HH:mm");
+        const end = moment("15:00", "HH:mm");
+        const stepMinutes = 30;
+
+        const cursor = start.clone();
+        while (cursor <= end) {
+          slots.push(cursor.format("HH:mm"));
+          cursor.add(stepMinutes, "minutes");
+        }
+      }
+
+      return slots;
+    };
+
+    const timeSlots = generateTimeSlots();
+
+    // Initialiser l'occupation à 0 pour chaque créneau
+    const occupancy = {};
+    timeSlots.forEach((slot) => {
+      occupancy[slot] = 0;
+    });
+
+    // Récupérer les réservations de la date
+    const reservations = await Reservation.find({ date });
+
+    // Ajouter l'occupation selon la granularité du jour
+    reservations.forEach((resv) => {
+      // Heure de départ de la réservation
+      let startTime = moment(resv.time, "HH:mm");
+
+      if (isFriday) {
+        // Vendredi : créneaux par heure → on aligne à l'heure pleine (ex: 17:30 -> 17:00)
+        startTime.minutes(0).seconds(0).milliseconds(0);
+
+        // Chaque réservation occupe 1 slot (1h) le vendredi
+        const slotKey = startTime.format("HH:mm");
+        if (occupancy.hasOwnProperty(slotKey)) {
+          occupancy[slotKey] += resv.guests;
+        }
+      } else {
+        // Autres jours : occupe 3 créneaux de 30 min (1h30), inchangé
+        for (let i = 0; i < DURATION_IN_SLOTS_30MIN; i++) {
+          const slot = startTime.clone().add(i * 30, "minutes").format("HH:mm");
+          if (occupancy.hasOwnProperty(slot)) {
+            occupancy[slot] += resv.guests;
+          }
+        }
+      }
+    });
+
+    // Construire la réponse
+    const availability = timeSlots.map((slot) => ({
+      time: slot,
+      availableSeats: Math.max(0, MAX_CAPACITY - occupancy[slot]),
+    }));
+
+    res.status(200).json(availability);
+  } catch (error) {
+    console.error("❌ Erreur lors de la récupération des disponibilités :", error);
+    res.status(500).json({ error: error.message });
+  }
 };
 
 
