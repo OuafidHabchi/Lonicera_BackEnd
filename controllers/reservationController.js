@@ -241,6 +241,7 @@ exports.getReservationsByDate = async (req, res) => {
 };
 
 
+
 exports.markAsSeen = async (req, res) => {
     const { reservationId, userName } = req.body;
 
