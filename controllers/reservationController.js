@@ -53,14 +53,14 @@ exports.createReservation = async (req, res) => {
         }
 
         // Message de confirmation au client
-        const confirmationLink = `https://www.lonicera.ca/CancelReservation`;
+        const confirmationLink = `https://lonicera.ca/CancelReservation}`;
 
         const messageFR = `Bonjour ${fullName}, votre réservation chez Chèvrefeuille Lonicera pour ${guests} personne(s) le ${date} à ${time} a bien été confirmée. Si vous souhaitez l'annuler, cliquez ici : ${confirmationLink}`;
         const messageEN = `Hello ${fullName}, your reservation at Chèvrefeuille Lonicera for ${guests} guest(s) on ${date} at ${time} has been confirmed. If you wish to cancel it, click here: ${confirmationLink}`;
         const confirmationMessage = preferredLanguage === 'fr' ? messageFR : messageEN;
 
         if (contactMethod === 'email' || contactMethod === 'both') {
-            const confirmationLink = `lonicera.ca/CancelReservation`;
+            const confirmationLink = `https://lonicera.ca/CancelReservation}`;
 
             const confirmationEmail = new SibApiV3Sdk.SendSmtpEmail();
             confirmationEmail.sender = {
@@ -278,7 +278,7 @@ exports.confirmReservation = async (req, res) => {
         apiKey.apiKey = process.env.BREVO_API_KEY;
 
         // Construction du lien de confirmation
-        const confirmationLink = `https://www.lonicera.ca/CancelReservation`;
+        const confirmationLink = `https://lonicera.ca/CancelReservation`;
 
         const messages = {
             fr: {
@@ -459,7 +459,7 @@ exports.refuseReservation = async (req, res) => {
 
                             <p>Nous vous écrivons pour vous informer, avec regret, que nous devons exceptionnellement annuler votre réservation.</p>
 
-                            <p>En raison d'une situation indépendante de notre volonté, nous ne serons pas en mesure de vous accueillir comme prévu.</p>
+                            <p>En raison d'une situation indépendante de notre volonté (fermeture exceptionnelle du restaurant ou événement majeur), nous ne serons pas en mesure de vous accueillir comme prévu.</p>
 
                             <h4>Détails de la réservation :</h4>
                             <ul>
@@ -480,7 +480,7 @@ exports.refuseReservation = async (req, res) => {
                     `
                 },
                 sms: {
-                    content: `Bonjour ${reservation.fullName}, nous sommes désolés de devoir annuler votre réservation du ${reservation.date} à ${reservation.time} en raison d'une situation indépendante de notre volonté. Merci de votre compréhension. – Chèvrefeuille Lonicera`
+                    content: `Bonjour ${reservation.fullName}, nous sommes désolés de devoir annuler votre réservation du ${reservation.date} à ${reservation.time} en raison d'une fermeture exceptionnelle. Merci de votre compréhension. – Chèvrefeuille Lonicera`
                 }
             },
             en: {
@@ -492,7 +492,7 @@ exports.refuseReservation = async (req, res) => {
 
                             <p>We regret to inform you that we must exceptionally cancel your reservation.</p>
 
-                            <p>Due to unforeseen circumstances, we will not be able to welcome you as planned.</p>
+                            <p>Due to unforeseen circumstances (such as an exceptional closure or major event), we will not be able to welcome you as planned.</p>
 
                             <h4>Reservation details:</h4>
                             <ul>
@@ -513,7 +513,7 @@ exports.refuseReservation = async (req, res) => {
                     `
                 },
                 sms: {
-                    content: `Hi ${reservation.fullName}, we are very sorry to cancel your reservation on ${reservation.date} at ${reservation.time} due to unforeseen circumstances. Thank you for your understanding. – Chèvrefeuille Lonicera`
+                    content: `Hi ${reservation.fullName}, we are very sorry to cancel your reservation on ${reservation.date} at ${reservation.time} due to an exceptional closure. Thank you for your understanding. – Chèvrefeuille Lonicera`
                 }
             }
         };
